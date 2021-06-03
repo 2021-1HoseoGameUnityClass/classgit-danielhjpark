@@ -21,10 +21,16 @@ public class Player : MonoBehaviour
     [SerializeField]
     private GameObject bulletObj = null;
 
+    private bool move = false;
+    private float moveHorizontal = 0;
+
     // Update is called once per frame
     void Update()
     {
-        PlayerMove();
+        if(move == true)
+        {
+            PlayerMove();
+        }
 
         if(Input.GetButtonDown("Jump"))
         {
@@ -38,7 +44,8 @@ public class Player : MonoBehaviour
 
     private void PlayerMove()
     {
-        float h = Input.GetAxis("Horizontal");
+        //float h = Input.GetAxis("Horizontal");
+        float h = moveHorizontal;
         float playerSpeed = h * moveSpeed * Time.deltaTime;
         Vector3 vector3 = new Vector3();
         vector3.x = playerSpeed;
@@ -77,9 +84,8 @@ public class Player : MonoBehaviour
         }
     }
 
-    private void OnCollissionEnter2D(Collision2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        //충돌체의 콜라이더가 플렛폼 태그라면
         if(collision.collider.tag == "Platform")
         {
             GetComponent<Animator>().SetBool("Jump", false);
@@ -89,9 +95,42 @@ public class Player : MonoBehaviour
 
     private void Fire()
     {
+        AudioClip audioClip = Resources.Load<AudioClip>("RangedAttack") as AudioClip;
+        GetComponent<AudioSource>().clip = audioClip;
         GetComponent<AudioSource>().Play();
         float direction = transform.localScale.x;
         Quaternion quaternion = new Quaternion(0, 0, 0, 0);
         Instantiate<GameObject>(bulletObj, bulletPos.transform.position, quaternion).GetComponent<Bullet>().InstantiateBullet(direction);
+    }
+
+    public void OnMove(bool _right)
+    {
+        if(_right)
+        {
+            moveHorizontal = 1;
+        }
+        else
+        {
+            moveHorizontal = -1;
+        }
+        move = true;
+    }
+    public void OffMove()
+    {
+        moveHorizontal = 0;
+        move = false;
+    }
+
+    private void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.collider.tag == "Enemy")
+        {
+            DataManager.instance.playerHP -= 1;
+            if(DataManager.instance.playerHP < 0)
+            {
+                DataManager.instance.playerHP = 0;
+            }
+            UIManager.instance.PlayerHP();
+        }
     }
 }
